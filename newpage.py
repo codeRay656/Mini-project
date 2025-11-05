@@ -157,6 +157,69 @@ ax[1].legend()
 plt.tight_layout()
 st.pyplot(fig)
 
+# --- Current Data Situation 
+# --- Late Delivery Rate Over Time ---
+st.subheader("📉 Late Delivery Rate Over Time")
+
+# Ensure 'Order Date' is parsed as datetime
+df["order_date"] = pd.to_datetime(df["order date (DateOrders)"], errors="coerce")
+
+# Group by month to calculate late delivery rate trend
+late_rate_trend = df.groupby(df["order_date"].dt.to_period("M"))["Late_delivery_risk"].mean().reset_index()
+late_rate_trend["order_date"] = late_rate_trend["order_date"].astype(str)
+late_rate_trend["Late_delivery_risk"] *= 100  # Convert to percentage
+
+fig, ax1 = plt.subplots(figsize=(10, 5))
+ax2 = ax1.twinx()
+
+# Column chart for total orders
+order_counts = df.groupby(df["order_date"].dt.to_period("M"))["Order Id"].nunique().reset_index()
+order_counts["order_date"] = order_counts["order_date"].astype(str)
+ax2.bar(order_counts["order_date"], order_counts["Order Id"], alpha=0.3, label="Total Orders", color="gray")
+
+# Line chart for late delivery rate
+ax1.plot(late_rate_trend["order_date"], late_rate_trend["Late_delivery_risk"], color="red", marker="o", label="Late Delivery Rate (%)")
+
+ax1.set_xlabel("Month")
+ax1.set_ylabel("Late Delivery Rate (%)", color="red")
+ax2.set_ylabel("Total Orders", color="gray")
+ax1.set_title("Late Delivery Rate vs Total Orders Over Time")
+ax1.legend(loc="upper left")
+ax2.legend(loc="upper right")
+ax1.grid(True, linestyle="--", alpha=0.5)
+st.pyplot(fig)
+
+
+# --- "Stuck" Orders by Status ---
+st.subheader("🧱 'Stuck' Orders by Status")
+
+status_counts = df["Order Status"].value_counts().reset_index()
+status_counts.columns = ["Order Status", "Count"]
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.write("### Donut Chart View")
+    fig, ax = plt.subplots(figsize=(5, 5))
+    wedges, texts, autotexts = ax.pie(
+        status_counts["Count"],
+        labels=status_counts["Order Status"],
+        autopct="%1.1f%%",
+        startangle=90,
+        wedgeprops=dict(width=0.4)
+    )
+    ax.set_title("Distribution of Orders by Status")
+    st.pyplot(fig)
+
+with col2:
+    st.write("### Bar Chart View")
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.bar(status_counts["Order Status"], status_counts["Count"], color="skyblue")
+    ax.set_title("Orders by Status")
+    ax.set_xlabel("Order Status")
+    ax.set_ylabel("Number of Orders")
+    ax.grid(axis="y", linestyle="--", alpha=0.6)
+    st.pyplot(fig)
 
 # --- Bottleneck Identification and Recommendations ---
 st.subheader("🚨 Identified Bottlenecks & AI Recommendations")
